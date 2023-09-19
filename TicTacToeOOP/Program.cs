@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -31,69 +32,105 @@ namespace TicTacToeOOP
         //BONUS: After every game, a history of moves is written to a file with a unique filename.
 
         //I wanna add color to the board hehehe
-        //I wanna add a winner/loser tracker so when the prog runs again it knows who will win
+        //I wanna add a winner/loser tracker so when the prog runs again it knows who will play first
 
-        static string[,] board = new string[3, 3];
+        static string[,] _board = new string[3, 3];
         static void Main(string[] args)
         {             
-            string[,] board = new string[3,3];
             string currMove = "";
             int moveCount = 0;
-            //int pMove = 0;
-            //int cpMove = 0;
             string[] moveSplit = new string[] { };
 
-            //initialize board
             iniBoard();
-
             while(true)
             {
-                Console.Clear();
                 displayBoard();
-                //player move
+                if (!gameFlag(moveCount))
+                    break;
                 moveCount = move(currMove, moveSplit, moveCount);
-                
             }
             Console.ReadKey();
         }
         static void iniBoard()
         {
-            for (int x = 0; x < board.GetLength(0); x++)
+            for (int x = 0; x < _board.GetLength(0); x++)
             {
-                for (int y = 0; y < board.GetLength(1); y++)
+                for (int y = 0; y < _board.GetLength(1); y++)
                 {
-                    board[x, y] = "-";
+                    _board[x, y] = "-";
                 }
             }
         }
         static void displayBoard()
         {
-            for (int x = 0; x < board.GetLength(0); x++)
+            Console.Clear();
+            Console.WriteLine("-------------");
+            for (int x = 0; x < _board.GetLength(0); x++)
             {
                 Console.Write("| ");
-                for (int y = 0; y < board.GetLength(1); y++)
+                for (int y = 0; y < _board.GetLength(1); y++)
                 {
-                    Console.Write(board[x, y] + " | ");
+                    Console.Write(_board[x, y] + " | ");
                 }
                 Console.WriteLine("\n-------------");
             }
-        }
-        static int move (string currMove, string[] moveSplit, int moveCount)
-        {
+
             Console.WriteLine("Please enter valid coordinates using the following format x-y" +
                              "\nx is the column number (0-2)" +
                              "\ny is the row number (0-2)");
+        }
+        static int move (string currMove, string[] moveSplit, int moveCount)
+        {
+            if (moveCount % 2 == 0)
+            {
+                Console.WriteLine("\nYour turn: ");
+                Console.SetCursorPosition(11, 11);
+            }
+            else
+            {
+                Console.WriteLine("\nOpponent's turn: ");
+                Console.SetCursorPosition(17, 11);
+            }
+
             currMove = Console.ReadLine();
             moveSplit = currMove.Split('-');
-            
-            //assign move value to board
-            if(moveCount % 2 == 0)
-                board[int.Parse(moveSplit[0]), int.Parse(moveSplit[1])] = "X";
-            else
-                board[int.Parse(moveSplit[0]), int.Parse(moveSplit[1])] = "O";
+            moveCount = assignMove(moveCount, moveSplit);
 
-            moveCount++;
             return moveCount;
+        }
+        static int assignMove(int moveCount, string[] moveSplit)
+        {
+            int x = int.Parse(moveSplit[0]);
+            int y = int.Parse(moveSplit[1]);
+
+            if (moveCount % 2 == 0) //player 0
+            {
+                if (!_board[x, y].Contains("X") && !_board[x, y].Contains("O"))
+                {
+                    _board[x, y] = "X";
+                    moveCount++;
+                }
+            }
+            else //player 1
+            {
+                if (!_board[x, y].Contains("X") && !_board[x, y].Contains("O"))
+                {
+                    _board[x, y] = "O";
+                    moveCount++;
+                }
+            }
+
+            return moveCount;
+        }
+
+        static bool gameFlag(int moveCount)
+        {
+            bool flag = true;
+            
+            if (moveCount == 5) //testing lang
+                flag = false;
+            
+                return flag;
         }
     }
 }
