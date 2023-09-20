@@ -3,6 +3,7 @@ using System.CodeDom;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -30,12 +31,12 @@ namespace TicTacToeOOP
         //If it can win, the computer must always try to win.
         //The computer should always do anything within the rules to stop the player from winning. (5 exp penalty if failed to accomplish)
 
-        //BONUS: After every game, a history of moves is written to a file with a unique filename. (20 exp)
+        //BONUS: OK - After every game, a history of moves is written to a file with a unique filename. (20 exp)
 
         //I wanna add color to the board hehehe
-        //I wanna add a winner/loser tracker so when the prog runs again it knows who will play first
 
         static string[,] _board = new string[3, 3];
+        static List<string> _moveHistory = new List<string>();
         static void Main(string[] args)
         {             
             string currMove = "";
@@ -55,7 +56,6 @@ namespace TicTacToeOOP
         }
         static void iniBoard()
         {
-            int value = 0;
             for (int x = 0; x < _board.GetLength(0); x++)
             {
                 for (int y = 0; y < _board.GetLength(1); y++)
@@ -74,7 +74,14 @@ namespace TicTacToeOOP
                 Console.Write("| ");
                 for (int y = 0; y < _board.GetLength(1); y++)
                 {
-                    Console.Write(_board[x, y] + " | ");
+                    if (_board[x, y] == "X")
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                    else if (_board[x, y] == "O")
+                        Console.ForegroundColor= ConsoleColor.DarkRed;
+
+                    Console.Write(_board[x, y]);
+                    Console.ResetColor();
+                    Console.Write(" | ");
                 }
                 Console.WriteLine("\n-------------");
             }
@@ -117,8 +124,8 @@ namespace TicTacToeOOP
                     }
 
                 }
-                //else
-                //draw
+                else
+                    displayWinner(" ");
 
             }
 
@@ -132,17 +139,19 @@ namespace TicTacToeOOP
             int x = int.Parse(moveSplit[0]);
             int y = int.Parse(moveSplit[1]);
 
-            if (playerTurn % 2 == 0) //player 1
+            if (playerTurn % 2 == 0) //player X
             {
                 if (!_board[x, y].Contains("X") && !_board[x, y].Contains("O"))
                 {
                     _board[x, y] = "X";
+                    moveHistory(x, y, "Player X", "X");
                     playerTurn++;
                 }
             }
-            else //player 2
+            else //player O
             {
                 _board[x, y] = "O";
+                moveHistory(x, y, "Player O", "O");
                 playerTurn++;
             }
             return playerTurn;
@@ -151,7 +160,7 @@ namespace TicTacToeOOP
         {
             int spaceCount = 0;
 
-            for(int x = 0; x < _board.GetLength(0); x++) 
+            for(int x = 0; x < _board.GetLength(0); x++)  
             { 
                 for(int y = 0; y < _board.GetLength(1); y++)
                 {
@@ -164,6 +173,7 @@ namespace TicTacToeOOP
         }
         static bool winFlag(string player)
         {
+            int roundCount = 0;
             int pNum = 0;
             bool flag = true;
             
@@ -192,20 +202,63 @@ namespace TicTacToeOOP
                 pNum++;
             }
 
-            if (!flag)
+            roundCount++;
+            if (!flag) //this will happen if someone wins
+            {
+                if (roundCount > 5)
+                {
+                    
+                }
                 displayWinner(player);
+            }
 
             return flag;
         }
+        //static int roundCounter (string player)
+        //{
+        //    int roundCount = 0;
+
+        //    if (player == "X")
+        //        roundCount++;
+        //    else if (player == "O")
+        //        roundCount++;
+
+        //    return roundCount;
+        //}
         static void displayWinner(string player)
         {
             Console.Clear();
             displayBoard();
 
             if (player.Contains("X"))
+            {
                 Console.WriteLine("You win!");
-            else
+                writeToFile("Move History.txt");
+            }
+
+            else if (player.Contains("O"))
+            {
                 Console.WriteLine("Opponent wins!");
+                writeToFile("Move History.txt");
+            }
+            else
+                Console.WriteLine("Draw!");
         }
+        static void moveHistory (int x, int y, string player, string symbol)
+        {
+            string history = player + " placed " + symbol + " at (" + x + ", " + y + ")";
+            _moveHistory.Add(history);
+        }
+        static void writeToFile(string path)
+        {
+            using (StreamWriter sw = new StreamWriter(path))
+            {
+                foreach (string move in _moveHistory)
+                {
+                    sw.WriteLine(move);
+                }
+            }
+        }
+       
     }
 }
