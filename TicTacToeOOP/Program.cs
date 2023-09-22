@@ -53,6 +53,8 @@ namespace TicTacToeOOP
         {
             bool flag = true;
             iniBoard();
+            string add = "Moves in Round " + _roundCount;
+            _moveHistory.Add(add);
 
             if(_roundCount % 2 == 0)
                 _playerTurn = 0;
@@ -329,7 +331,10 @@ namespace TicTacToeOOP
         static bool roundChecker()
         {
             if (_roundCount > 5 || _pX == 3 || _pO == 3)
+            {
+                writeToFile("Move History.txt");
                 return false;
+            }
             return true;
         }
         static void displayWinner(string winner)
@@ -351,7 +356,8 @@ namespace TicTacToeOOP
             if (winner.Contains("X"))
             {
                 Console.WriteLine("Player X wins!");
-                writeToFile("Move History.txt");
+                _moveHistory.Add("Player X wins");
+                _moveHistory.Add("\n");
                 _pX++;
                 _roundCount++;
             }
@@ -359,13 +365,16 @@ namespace TicTacToeOOP
             else if (winner.Contains("O"))
             {
                 Console.WriteLine("Player O wins!");
-                writeToFile("Move History.txt");
+                _moveHistory.Add("Player O wins");
+                _moveHistory.Add("\n");
                 _pO++;
                 _roundCount++;
             }
             else
             {
                 Console.WriteLine("Draw!");
+                _moveHistory.Add("Draw for this rounds");
+                _moveHistory.Add("\n");
                 _roundCount++;
             }
             _playerTurn++;
@@ -375,12 +384,16 @@ namespace TicTacToeOOP
                 Console.Clear();
                 displayBoard();
                 Console.WriteLine("Player X beat Player O in Tic Tac Toe!");
+                _moveHistory.Add("Player X wins VS Player O");
+                _moveHistory.Add("\n");
             }
             else if(_pO == 3)
             {
                 Console.Clear();
                 displayBoard();
                 Console.WriteLine("Player O beat Player X in Tic Tac Toe!");
+                _moveHistory.Add("Player O wins VS Player X");
+                _moveHistory.Add("\n");
             }
 
             Console.WriteLine("Press any key to continue. . .");
