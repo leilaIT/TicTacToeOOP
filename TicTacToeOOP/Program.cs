@@ -24,7 +24,7 @@ namespace TicTacToeOOP
 
         //OK - There should be no logic performed inside the Main method. (15 exp penalty if failed to accomplish)
 
-        //Each game should alternate who goes first. Example, if the first game the player starts,
+        //OK - Each game should alternate who goes first. Example, if the first game the player starts,
         //the second game the computer starts. (5 exp penalty if failed to accomplish)
 
         //OK - The game ends after a best of 5(first to 3 wins) or after 5 consecutive draws. (5 exp penalty if failed to accomplish)
@@ -53,11 +53,21 @@ namespace TicTacToeOOP
         {
             bool flag = true;
             iniBoard();
-            _playerTurn = 0;
+
+            if(_roundCount % 2 == 0)
+                _playerTurn = 0;
+            else
+                _playerTurn = 1;
+            
             while (flag)
             {
                 _playerTurn = move("");
                 displayBoard();
+                if(spacesLeft() == 0)
+                {
+                    displayWinner("D");
+                    return false;
+                }
                 if(winFlag("")) //if there is no winner yet
                     _playerTurn++;
                 else //if (!winFlag("")) //if there is a winner
@@ -101,7 +111,7 @@ namespace TicTacToeOOP
                 Console.WriteLine("\n-------------");
             }
         }
-        static int move (string currMove)
+        static int move(string currMove)
         {
             Random rnd = new Random();
             string[] moveSplit = new string[] { };
@@ -116,44 +126,121 @@ namespace TicTacToeOOP
                              "\nx is the column number (0-2)" +
                              "\ny is the row number (0-2)");
 
-            if (_playerTurn % 2 == 0) //player X
-            {
-                Console.WriteLine("\nPlayer X's turn: ");
-                Console.SetCursorPosition(17, 13);
-                currMove = Console.ReadLine();
-            }
-            else //player 0
-            {
-                Console.WriteLine("\nPlayer O's turn: ");
-                Console.SetCursorPosition(17, 13);
-                Console.WriteLine("\nPlayer O is thinking. . .");
-                //Thread.Sleep(2000);
-
-                if (spacesLeft() > 0)
+            if (_roundCount % 2 == 0) //if current round even, player x first
+            { 
+                if (_playerTurn % 2 == 0) //player X
                 {
+                    Console.WriteLine("\nPlayer X's turn: ");
+                    Console.SetCursorPosition(17, 13);
+                    while(true)
+                    {
+                        currMove = Console.ReadLine();
+                        moveSplit = currMove.Split('-');
+                        if(moveSplit.Length != 2 || 
+                          !int.TryParse(moveSplit[0], out x) ||
+                          !int.TryParse(moveSplit[1], out y))
+                        {
+                            x = -1;
+                            y = -1;
+                        }
+
+                        if (x < 0 || x > 2 || y < 0 || y > 2)
+                        {
+                            Console.WriteLine("{0} is not a valid input. . . Press any key to continue. . .", currMove);
+                            Console.ReadKey();
+                            Console.SetCursorPosition(17, 13);
+                            Console.Write(new string(' ', 100));
+                            Console.SetCursorPosition(0, 13 + 1);
+                            Console.Write(new string(' ', 200));
+                            Console.SetCursorPosition(17, 13);
+                        }
+                        else
+                            break;
+                    }
+                }
+
+                else //player 0
+                {
+                    Console.WriteLine("\nPlayer O's turn: ");
+                    Console.SetCursorPosition(17, 13);
+                    Console.WriteLine("\nPlayer O is thinking. . .");
+                    Thread.Sleep(2000);
+
                     List<int[]> boardCoords = possibleMoves();
                     while (true)
                     {
                         num = rnd.Next(0, boardCoords.Count);
                         x = boardCoords[num][0];
                         y = boardCoords[num][1];
-                        
+
                         if (_board[x, y] == "-")
                         {
                             currMove = x.ToString() + "-" + y.ToString();
+                            moveSplit = currMove.Split('-');
                             break;
                         }
                         else
                             boardCoords.RemoveAt(num);
                     }
-                   
+                }
+            }
+            else
+            {
+                if (_playerTurn % 2 != 0) //player O
+                {
+                    Console.WriteLine("\nPlayer O's turn: ");
+                    Console.SetCursorPosition(17, 13);
+                    Console.WriteLine("\nPlayer O is thinking. . .");
+                    Thread.Sleep(2000);
+
+                    List<int[]> boardCoords = possibleMoves();
+                    while (true)
+                    {
+                        num = rnd.Next(0, boardCoords.Count);
+                        x = boardCoords[num][0];
+                        y = boardCoords[num][1];
+
+                        if (_board[x, y] == "-")
+                        {
+                            currMove = x.ToString() + "-" + y.ToString();
+                            moveSplit = currMove.Split('-');
+                            break;
+                        }
+                        else
+                            boardCoords.RemoveAt(num);
+                    }
                 }
                 else
-                    displayWinner(" ");
+                {
+                    Console.WriteLine("\nPlayer X's turn: ");
+                    Console.SetCursorPosition(17, 13);
+                    while (true)
+                    {
+                        currMove = Console.ReadLine();
+                        moveSplit = currMove.Split('-');
+                        if (moveSplit.Length != 2 ||
+                          !int.TryParse(moveSplit[0], out x) ||
+                          !int.TryParse(moveSplit[1], out y))
+                        {
+                            x = -1;
+                            y = -1;
+                        }
 
+                        if (x < 0 || x > 2 || y < 0 || y > 2)
+                        {
+                            Console.WriteLine("{0} is not a valid input. . . Press any key to continue. . .", currMove);
+                            Console.ReadKey();
+                            Console.SetCursorPosition(17, 13);
+                            Console.Write(new string(' ', 100));
+                            Console.SetCursorPosition(0, 13 + 1);
+                            Console.Write(new string(' ', 200));
+                            Console.SetCursorPosition(17, 13);
+                        }
+                        else
+                            break;
+                    }
+                }
             }
-
-            moveSplit = currMove.Split('-');
             turn = assignMove(turn, moveSplit);
 
             return turn;
@@ -190,8 +277,6 @@ namespace TicTacToeOOP
                         spaceCount++;
                 }
             }
-
-
             return spaceCount;
         }
         static List<int[]> possibleMoves()
@@ -211,14 +296,10 @@ namespace TicTacToeOOP
             return possibleMoves;
         }
         static bool winFlag(string player) 
-        //if false = there is a winner
-        //if true = no winner
         {
-            int pNum = 0;
             bool flag = true;
-            string winner = "";
             
-            while(pNum < 2 && flag)
+            while(flag)
             {
                 if (_playerTurn % 2 == 0)
                     player = "X";
@@ -240,8 +321,9 @@ namespace TicTacToeOOP
                         break;
                     }
                 }
-                pNum++;
+                break;
             }
+
             return flag;
         }
         static bool roundChecker()
@@ -252,17 +334,19 @@ namespace TicTacToeOOP
         }
         static void displayWinner(string winner)
         {
-            Console.Clear();
-            displayBoard();
-
-            if(_playerTurn % 2 == 0)
+            if (winner == " ")
             {
-                winner = "X";
+                if (_playerTurn % 2 == 0)
+                {
+                    winner = "X";
+                }
+                else
+                {
+                    winner = "O";
+                }
             }
             else
-            {
-                winner = "O";
-            }
+                winner = "D";
 
             if (winner.Contains("X"))
             {
