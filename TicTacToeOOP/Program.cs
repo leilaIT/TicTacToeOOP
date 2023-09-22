@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,12 +22,12 @@ namespace TicTacToeOOP
         //Example, if the player logic uses method1 to place moves on the board,
         //the computer logic should also use method1. (15 exp penalty if failed to accomplish)
 
-        //OK (ig) - There should be no logic performed inside the Main method. (15 exp penalty if failed to accomplish)
+        //OK - There should be no logic performed inside the Main method. (15 exp penalty if failed to accomplish)
 
         //Each game should alternate who goes first. Example, if the first game the player starts,
         //the second game the computer starts. (5 exp penalty if failed to accomplish)
 
-        //The game ends after a best of 5(first to 3 wins) or after 5 consecutive draws. (5 exp penalty if failed to accomplish)
+        //OK - The game ends after a best of 5(first to 3 wins) or after 5 consecutive draws. (5 exp penalty if failed to accomplish)
 
         //If it can win, the computer must always try to win.
         //The computer should always do anything within the rules to stop the player from winning. (5 exp penalty if failed to accomplish)
@@ -37,22 +38,35 @@ namespace TicTacToeOOP
 
         static string[,] _board = new string[3, 3];
         static List<string> _moveHistory = new List<string>();
+        static int _playerTurn = 0;
+        static int _pX = 0;
+        static int _pO = 0;
+        static int _roundCount = 0;
         static void Main(string[] args)
-        {             
-            string currMove = "";
-            int playerTurn = 0;
-            string[] moveSplit = new string[] { };
-
-            iniBoard();
-            while(true)
+        {   
+            while (roundChecker())
             {
-                playerTurn = move(currMove, moveSplit, playerTurn);
-                displayBoard();
-
-                if (!winFlag(""))
-                    break;
+                gameStart();
             }
-            Console.ReadKey();
+        }
+        static bool gameStart()
+        {
+            bool flag = true;
+            iniBoard();
+            _playerTurn = 0;
+            while (flag)
+            {
+                _playerTurn = move("");
+                displayBoard();
+                if(winFlag("")) //if there is no winner yet
+                    _playerTurn++;
+                else //if (!winFlag("")) //if there is a winner
+                {
+                    displayWinner(" ");
+                    return false;
+                }
+            }
+            return true;
         }
         static void iniBoard()
         {
@@ -68,7 +82,8 @@ namespace TicTacToeOOP
         static void displayBoard()
         {
             Console.Clear();
-            Console.WriteLine("-------------");
+            Console.WriteLine("Player X: {0} | Player O: {1}", _pX, _pO);
+            Console.WriteLine("\n-------------");
             for (int x = 0; x < _board.GetLength(0); x++)
             {
                 Console.Write("| ");
@@ -86,43 +101,52 @@ namespace TicTacToeOOP
                 Console.WriteLine("\n-------------");
             }
         }
-        static int move (string currMove, string[] moveSplit, int playerTurn)
+        static int move (string currMove)
         {
             Random rnd = new Random();
+            string[] moveSplit = new string[] { };
             int x = 0;
             int y = 0;
+            int num = 0;
+            int turn = 0;
+
+            turn = _playerTurn;
 
             Console.WriteLine("Please enter valid coordinates using the following format x-y" +
                              "\nx is the column number (0-2)" +
                              "\ny is the row number (0-2)");
 
-            if (playerTurn % 2 == 0)
+            if (_playerTurn % 2 == 0) //player X
             {
-                Console.WriteLine("\nYour turn: ");
-                Console.SetCursorPosition(11, 11);
+                Console.WriteLine("\nPlayer X's turn: ");
+                Console.SetCursorPosition(17, 13);
                 currMove = Console.ReadLine();
             }
-            else
+            else //player 0
             {
-                Console.WriteLine("\nOpponent's turn: ");
-                Console.SetCursorPosition(17, 11);
-                Console.WriteLine("\nOpponent is thinking. . .");
-                Thread.Sleep(2000);
+                Console.WriteLine("\nPlayer O's turn: ");
+                Console.SetCursorPosition(17, 13);
+                Console.WriteLine("\nPlayer O is thinking. . .");
+                //Thread.Sleep(2000);
 
                 if (spacesLeft() > 0)
                 {
+                    List<int[]> boardCoords = possibleMoves();
                     while (true)
                     {
-                        x = rnd.Next(0, 2);
-                        y = rnd.Next(0, 2);
-
+                        num = rnd.Next(0, boardCoords.Count);
+                        x = boardCoords[num][0];
+                        y = boardCoords[num][1];
+                        
                         if (_board[x, y] == "-")
                         {
                             currMove = x.ToString() + "-" + y.ToString();
                             break;
                         }
+                        else
+                            boardCoords.RemoveAt(num);
                     }
-
+                   
                 }
                 else
                     displayWinner(" ");
@@ -130,31 +154,29 @@ namespace TicTacToeOOP
             }
 
             moveSplit = currMove.Split('-');
-            playerTurn = assignMove(playerTurn, moveSplit);
+            turn = assignMove(turn, moveSplit);
 
-            return playerTurn;
+            return turn;
         }
-        static int assignMove(int playerTurn, string[] moveSplit)
+        static int assignMove(int turn, string[] moveSplit)
         {
             int x = int.Parse(moveSplit[0]);
             int y = int.Parse(moveSplit[1]);
 
-            if (playerTurn % 2 == 0) //player X
+            if (turn % 2 == 0) //player X
             {
                 if (!_board[x, y].Contains("X") && !_board[x, y].Contains("O"))
                 {
                     _board[x, y] = "X";
                     moveHistory(x, y, "Player X", "X");
-                    playerTurn++;
                 }
             }
             else //player O
             {
                 _board[x, y] = "O";
                 moveHistory(x, y, "Player O", "O");
-                playerTurn++;
             }
-            return playerTurn;
+            return turn;
         }
         static int spacesLeft ()
         {
@@ -169,17 +191,36 @@ namespace TicTacToeOOP
                 }
             }
 
+
             return spaceCount;
         }
-        static bool winFlag(string player)
+        static List<int[]> possibleMoves()
         {
-            int roundCount = 0;
+            List<int[]>possibleMoves = new List<int[]>();
+            int[] coords = new int[] { };
+
+            for(int a = 0; a < 3; a++)
+            {
+                for(int b = 0; b < 3; b++)
+                {
+                    coords = new int[] { a, b };
+                    possibleMoves.Add(coords);
+                }
+            }
+            
+            return possibleMoves;
+        }
+        static bool winFlag(string player) 
+        //if false = there is a winner
+        //if true = no winner
+        {
             int pNum = 0;
             bool flag = true;
+            string winner = "";
             
             while(pNum < 2 && flag)
             {
-                if (pNum == 0)
+                if (_playerTurn % 2 == 0)
                     player = "X";
                 else
                     player = "O";
@@ -187,7 +228,7 @@ namespace TicTacToeOOP
                 for (int x = 0; x < _board.GetLength(0); x++)
                 {
                     if (_board[x, 0] == player && _board[x, 1] == player && _board[x, 2] == player
-                     || _board[0, x] == player && _board[1, 0] == player && _board[2, x] == player) //column
+                     || _board[0, x] == player && _board[1, x] == player && _board[2, x] == player) //column
                     {
                         flag = false;
                         break;
@@ -201,48 +242,65 @@ namespace TicTacToeOOP
                 }
                 pNum++;
             }
-
-            roundCount++;
-            if (!flag) //this will happen if someone wins
-            {
-                if (roundCount > 5)
-                {
-                    
-                }
-                displayWinner(player);
-            }
-
             return flag;
         }
-        //static int roundCounter (string player)
-        //{
-        //    int roundCount = 0;
-
-        //    if (player == "X")
-        //        roundCount++;
-        //    else if (player == "O")
-        //        roundCount++;
-
-        //    return roundCount;
-        //}
-        static void displayWinner(string player)
+        static bool roundChecker()
+        {
+            if (_roundCount > 5 || _pX == 3 || _pO == 3)
+                return false;
+            return true;
+        }
+        static void displayWinner(string winner)
         {
             Console.Clear();
             displayBoard();
 
-            if (player.Contains("X"))
+            if(_playerTurn % 2 == 0)
             {
-                Console.WriteLine("You win!");
-                writeToFile("Move History.txt");
-            }
-
-            else if (player.Contains("O"))
-            {
-                Console.WriteLine("Opponent wins!");
-                writeToFile("Move History.txt");
+                winner = "X";
             }
             else
+            {
+                winner = "O";
+            }
+
+            if (winner.Contains("X"))
+            {
+                Console.WriteLine("Player X wins!");
+                writeToFile("Move History.txt");
+                _pX++;
+                _roundCount++;
+            }
+
+            else if (winner.Contains("O"))
+            {
+                Console.WriteLine("Player O wins!");
+                writeToFile("Move History.txt");
+                _pO++;
+                _roundCount++;
+            }
+            else
+            {
                 Console.WriteLine("Draw!");
+                _roundCount++;
+            }
+            _playerTurn++;
+            
+            if(_pX == 3)
+            {
+                Console.Clear();
+                displayBoard();
+                Console.WriteLine("Player X beat Player O in Tic Tac Toe!");
+            }
+            else if(_pO == 3)
+            {
+                Console.Clear();
+                displayBoard();
+                Console.WriteLine("Player O beat Player X in Tic Tac Toe!");
+            }
+
+            Console.WriteLine("Press any key to continue. . .");
+            Console.ReadKey();
         }
         static void moveHistory (int x, int y, string player, string symbol)
         {
@@ -259,6 +317,5 @@ namespace TicTacToeOOP
                 }
             }
         }
-       
     }
 }
