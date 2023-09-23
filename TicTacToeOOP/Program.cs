@@ -42,6 +42,7 @@ namespace TicTacToeOOP
         static int _pX = 0;
         static int _pO = 0;
         static int _roundCount = 0;
+        static Random _rnd = new Random();
         static void Main(string[] args)
         {   
             while (roundChecker())
@@ -113,7 +114,10 @@ namespace TicTacToeOOP
         {
             Console.Clear();
             Console.ForegroundColor = ConsoleColor.DarkMagenta;
-            Console.Write("Round: " + _roundCount);
+            if(_roundCount > 5)
+                Console.Write("Round: 5");
+            else
+                Console.Write("Round: " + _roundCount);
             Console.ResetColor();
             Console.Write(" | ");
             Console.ForegroundColor = ConsoleColor.DarkCyan;
@@ -152,7 +156,6 @@ namespace TicTacToeOOP
         }
         static void move()
         {
-            Random rnd = new Random();
             string currMove = "";
             string[] moveSplit = new string[] { };
             int x = 0;
@@ -164,153 +167,358 @@ namespace TicTacToeOOP
                              "\ny is the row number (0-2)");
 
             if (_roundCount % 2 == 0) //if current round even, player x first
-            { 
-                if (_playerTurn % 2 == 0) //player X
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                    Console.WriteLine("\nPlayer X's turn: ");
-                    Console.ResetColor();
-                    Console.SetCursorPosition(17, 14);
-                    while(true)
-                    {
-                        currMove = Console.ReadLine();
-                        moveSplit = currMove.Split('-');
-                        if(moveSplit.Length != 2 || 
-                          !int.TryParse(moveSplit[0], out x) ||
-                          !int.TryParse(moveSplit[1], out y))
-                        {
-                            x = -1;
-                            y = -1;
-                        }
-
-                        if (x < 0 || x > 2 || y < 0 || y > 2 || 
-                           _board[x, y] == 'X' || _board[x, y] == 'O')
-                        {
-                            Console.WriteLine("{0} is not a valid input. . . Press any key to continue. . .", currMove);
-                            Console.ReadKey();
-                            Console.SetCursorPosition(17, 14);
-                            Console.Write(new string(' ', 100));
-                            Console.SetCursorPosition(0, 14 + 1);
-                            Console.Write(new string(' ', 200));
-                            Console.SetCursorPosition(17, 14);
-                        }
-                        else
-                            break;
-                    }
-                }
-
-                else //player 0
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine("\nPlayer O's turn: ");
-                    Console.SetCursorPosition(17, 14);
-                    Console.WriteLine("\nPlayer O is thinking. . .");
-                    Console.ResetColor();
-                    Thread.Sleep(2000);
-
-                    List<int[]> boardCoords = possibleMoves();
-                    while (true)
-                    {
-                        if(_playerTurn == 1) //cpu second move
-                        {
-                            if (_board[1, 1] == ' ') //take center
-                            {
-                                x = 1;
-                                y = 1;
-                            }
-                        } 
-                        else //not second move anymore
-                        {
-                            num = rnd.Next(0, boardCoords.Count);
-                            x = boardCoords[num][0];
-                            y = boardCoords[num][1];
-                        }
-
-                        if (_board[x, y] == ' ')
-                        {
-                            currMove = x.ToString() + "-" + y.ToString();
-                            moveSplit = currMove.Split('-');
-                            break;
-                        }
-                        else
-                            boardCoords.RemoveAt(num);
-                    }
-                }
+            {
+                moveSplit = evenRound(currMove, moveSplit, x, y, num);
             }
             else //if current round odd, computer goes first
             {
-                if (_playerTurn % 2 != 0) //player O
+                moveSplit = oddRound(currMove, moveSplit, x, y, num);
+            }
+            assignMove(moveSplit);
+        }
+        static string[] evenRound (string currMove, string[] moveSplit, int x, int y, int num)
+        {
+            if (_playerTurn % 2 == 0) //player X
+            {
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine("\nPlayer X's turn: ");
+                Console.ResetColor();
+                Console.SetCursorPosition(17, 14);
+                while (true)
                 {
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine("\nPlayer O's turn: ");
-                    Console.SetCursorPosition(17, 14);
-                    Console.WriteLine("\nPlayer O is thinking. . .");
-                    Console.ResetColor();
-                    Thread.Sleep(2000);
-
-                    List<int[]> boardCoords = possibleMoves();
-                    while (true)
+                    currMove = Console.ReadLine();
+                    moveSplit = currMove.Split('-');
+                    if (moveSplit.Length != 2 ||
+                      !int.TryParse(moveSplit[0], out x) ||
+                      !int.TryParse(moveSplit[1], out y))
                     {
-                        if (_playerTurn == 1) //cpu first move
+                        x = -1;
+                        y = -1;
+                    }
+
+                    if (x < 0 || x > 2 || y < 0 || y > 2 ||
+                       _board[x, y] == 'X' || _board[x, y] == 'O')
+                    {
+                        Console.WriteLine("{0} is not a valid input. . . Press any key to continue. . .", currMove);
+                        Console.ReadKey();
+                        Console.SetCursorPosition(17, 14);
+                        Console.Write(new string(' ', 100));
+                        Console.SetCursorPosition(0, 14 + 1);
+                        Console.Write(new string(' ', 200));
+                        Console.SetCursorPosition(17, 14);
+                    }
+                    else
+                        break;
+                }
+            }
+
+            else //player 0
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("\nPlayer O's turn: ");
+                Console.SetCursorPosition(17, 14);
+                Console.WriteLine("\nPlayer O is thinking. . .");
+                Console.ResetColor();
+                Thread.Sleep(2000);
+
+                List<int[]> boardCoords = possibleMoves();
+                while (true)
+                {
+                    x = -1;
+                    y = -1;
+                    if (_playerTurn == 1) //cpu second move
+                    {
+                        if (_board[1, 1] == ' ') //take center
                         {
-                            if (_board[1, 1] == ' ') //take center
+                            x = 1;
+                            y = 1;
+                        }
+                    }
+                    else //not second move anymore
+                    {
+                        //row defense
+                        for (int i = 0; i < _board.GetLength(0); i++)
+                        {
+                            if (_board[i, 0] == ' ' || _board[i, 1] == ' ' || _board[i, 2] == ' ')
                             {
-                                x = 1;
+                                if (_board[i, 0] == 'X' && _board[i, 1] == 'X' && _board[i, 2] == ' ')
+                                {
+                                    x = i;
+                                    y = 2;
+                                }
+                                else if (_board[i, 0] == 'X' && _board[i, 1] == ' ' && _board[i, 2] == 'X')
+                                {
+                                    x = i;
+                                    y = 1;
+                                }
+                                else if (_board[i, 0] == ' ' && _board[i, 1] == 'X' && _board[i, 2] == 'X')
+                                {
+                                    x = i;
+                                    y = 0;
+                                }
+                            }
+
+                            if (x != -1 && y != -1)
+                                break;
+                        }
+
+                        //column defense
+                        for (int j = 0; j < _board.GetLength(1); j++)
+                        {
+                            if (_board[0, j] == ' ' || _board[1, j] == ' ' || _board[2, j] == ' ')
+                            {
+                                if (_board[0, j] == 'X' && _board[1, j] == 'X' && _board[2, j] == ' ')
+                                {
+                                    x = 2;
+                                    y = j;
+                                }
+                                else if (_board[0, j] == 'X' && _board[1, j] == ' ' && _board[2, j] == 'X')
+                                {
+                                    x = 1;
+                                    y = j;
+                                }
+                                else if (_board[0, j] == ' ' && _board[1, j] == 'X' && _board[2, j] == 'X')
+                                {
+                                    x = 0;
+                                    y = j;
+                                }
+                            }
+
+                            if (x != -1 && y != -1)
+                                break;
+                        }
+
+                        //row offense
+                        for (int i = 0; i < _board.GetLength(0); i++)
+                        {
+                            if (_board[i, 0] == 'O' && _board[i, 1] == 'O' && _board[i, 2] == ' ')
+                            {
+                                x = i;
+                                y = 2;
+                            }
+                            else if (_board[i, 0] == 'O' && _board[i, 1] == ' ' && _board[i, 2] == 'O')
+                            {
+                                x = i;
                                 y = 1;
                             }
-                        }
-                        else
-                        {
-                            num = rnd.Next(0, boardCoords.Count);
-                            x = boardCoords[num][0];
-                            y = boardCoords[num][1];
+                            else if (_board[i, 0] == ' ' && _board[i, 1] == 'O' && _board[i, 2] == 'O')
+                            {
+                                x = i;
+                                y = 0;
+                            }
                         }
 
-                        if (_board[x, y] == ' ')
+                        //column offense
+                        for (int j = 0; j < _board.GetLength(1); j++)
                         {
-                            currMove = x.ToString() + "-" + y.ToString();
-                            moveSplit = currMove.Split('-');
-                            break;
+                            if (_board[0, j] == 'O' && _board[1, j] == 'O' && _board[2, j] == ' ')
+                            {
+                                x = 2;
+                                y = j;
+                            }
+                            else if (_board[0, j] == 'O' && _board[1, j] == ' ' && _board[2, j] == 'O')
+                            {
+                                x = 1;
+                                y = j;
+                            }
+                            else if (_board[0, j] == ' ' && _board[1, j] == 'O' && _board[2, j] == 'O')
+                            {
+                                x = 0;
+                                y = j;
+                            }
                         }
-                        else
-                            boardCoords.RemoveAt(num);
                     }
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkCyan;
-                    Console.WriteLine("\nPlayer X's turn: ");
-                    Console.ResetColor();
-                    Console.SetCursorPosition(17, 14);
-                    while (true)
+
+                    if (x == -1 && y == -1)
                     {
-                        currMove = Console.ReadLine();
+                        num = _rnd.Next(0, boardCoords.Count);
+                        x = boardCoords[num][0];
+                        y = boardCoords[num][1];
+                    }
+                    if (_board[x, y] == ' ')
+                    {
+                        currMove = x.ToString() + "-" + y.ToString();
                         moveSplit = currMove.Split('-');
-                        if (moveSplit.Length != 2 ||
-                          !int.TryParse(moveSplit[0], out x) ||
-                          !int.TryParse(moveSplit[1], out y))
+                        break;
+                    }
+                    else
+                        boardCoords.RemoveAt(num);
+                }
+            }
+            return moveSplit;
+        }
+        static string[] oddRound(string currMove, string[] moveSplit, int x, int y, int num)
+        {
+            if (_playerTurn % 2 != 0) //player O
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("\nPlayer O's turn: ");
+                Console.SetCursorPosition(17, 14);
+                Console.WriteLine("\nPlayer O is thinking. . .");
+                Console.ResetColor();
+                Thread.Sleep(2000);
+
+                List<int[]> boardCoords = possibleMoves();
+                while (true)
+                {
+                    x = -1;
+                    y = -1;
+                    if (_playerTurn == 1) //cpu second move
+                    {
+                        if (_board[1, 1] == ' ') //take center
                         {
-                            x = -1;
-                            y = -1;
+                            x = 1;
+                            y = 1;
+                        }
+                    }
+                    else //not second move anymore
+                    {
+                        //row defense
+                        for (int i = 0; i < _board.GetLength(0); i++)
+                        {
+                            if (_board[i, 0] == ' ' || _board[i, 1] == ' ' || _board[i, 2] == ' ')
+                            {
+                                if (_board[i, 0] == 'X' && _board[i, 1] == 'X' && _board[i, 2] == ' ')
+                                {
+                                    x = i;
+                                    y = 2;
+                                }
+                                else if (_board[i, 0] == 'X' && _board[i, 1] == ' ' && _board[i, 2] == 'X')
+                                {
+                                    x = i;
+                                    y = 1;
+                                }
+                                else if (_board[i, 0] == ' ' && _board[i, 1] == 'X' && _board[i, 2] == 'X')
+                                {
+                                    x = i;
+                                    y = 0;
+                                }
+                            }
+
+                            if (x != -1 && y != -1)
+                                break;
                         }
 
-                        if (x < 0 || x > 2 || y < 0 || y > 2 ||
-                            _board[x, y] == 'X' || _board[x, y] == 'O')
+                        //column defense
+                        for (int j = 0; j < _board.GetLength(1); j++)
                         {
-                            Console.WriteLine("{0} is not a valid input. . . Press any key to continue. . .", currMove);
-                            Console.ReadKey();
-                            Console.SetCursorPosition(17, 14);
-                            Console.Write(new string(' ', 100));
-                            Console.SetCursorPosition(0, 14 + 1);
-                            Console.Write(new string(' ', 200));
-                            Console.SetCursorPosition(17, 14);
+                            if (_board[0, j] == ' ' || _board[1, j] == ' ' || _board[2, j] == ' ')
+                            {
+                                if (_board[0, j] == 'X' && _board[1, j] == 'X' && _board[2, j] == ' ')
+                                {
+                                    x = 2;
+                                    y = j;
+                                }
+                                else if (_board[0, j] == 'X' && _board[1, j] == ' ' && _board[2, j] == 'X')
+                                {
+                                    x = 1;
+                                    y = j;
+                                }
+                                else if (_board[0, j] == ' ' && _board[1, j] == 'X' && _board[2, j] == 'X')
+                                {
+                                    x = 0;
+                                    y = j;
+                                }
+                            }
+
+                            if (x != -1 && y != -1)
+                                break;
                         }
-                        else
-                            break;
+
+                        //row offense
+                        for (int i = 0; i < _board.GetLength(0); i++)
+                        {
+                            if (_board[i, 0] == 'O' && _board[i, 1] == 'O' && _board[i, 2] == ' ')
+                            {
+                                x = i;
+                                y = 2;
+                            }
+                            else if (_board[i, 0] == 'O' && _board[i, 1] == ' ' && _board[i, 2] == 'O')
+                            {
+                                x = i;
+                                y = 1;
+                            }
+                            else if (_board[i, 0] == ' ' && _board[i, 1] == 'O' && _board[i, 2] == 'O')
+                            {
+                                x = i;
+                                y = 0;
+                            }
+                        }
+
+                        //column offense
+                        for (int j = 0; j < _board.GetLength(1); j++)
+                        {
+                            if (_board[0, j] == 'O' && _board[1, j] == 'O' && _board[2, j] == ' ')
+                            {
+                                x = 2;
+                                y = j;
+                            }
+                            else if (_board[0, j] == 'O' && _board[1, j] == ' ' && _board[2, j] == 'O')
+                            {
+                                x = 1;
+                                y = j;
+                            }
+                            else if (_board[0, j] == ' ' && _board[1, j] == 'O' && _board[2, j] == 'O')
+                            {
+                                x = 0;
+                                y = j;
+                            }
+                        }
+                    }
+
+                    if (x == -1 && y == -1)
+                    {
+                        num = _rnd.Next(0, boardCoords.Count);
+                        x = boardCoords[num][0];
+                        y = boardCoords[num][1];
+                    }
+
+                    if (_board[x, y] == ' ')
+                    {
+                        currMove = x.ToString() + "-" + y.ToString();
+                        moveSplit = currMove.Split('-');
+                        break;
+                    }
+                    else
+                    {
+                        boardCoords.RemoveAt(num);
                     }
                 }
             }
-            assignMove(moveSplit);
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                Console.WriteLine("\nPlayer X's turn: ");
+                Console.ResetColor();
+                Console.SetCursorPosition(17, 14);
+                while (true)
+                {
+                    currMove = Console.ReadLine();
+                    moveSplit = currMove.Split('-');
+                    if (moveSplit.Length != 2 ||
+                      !int.TryParse(moveSplit[0], out x) ||
+                      !int.TryParse(moveSplit[1], out y))
+                    {
+                        x = -1;
+                        y = -1;
+                    }
+
+                    if (x < 0 || x > 2 || y < 0 || y > 2 ||
+                        _board[x, y] == 'X' || _board[x, y] == 'O')
+                    {
+                        Console.WriteLine("{0} is not a valid input. . . Press any key to continue. . .", currMove);
+                        Console.ReadKey();
+                        Console.SetCursorPosition(17, 14);
+                        Console.Write(new string(' ', 100));
+                        Console.SetCursorPosition(0, 14 + 1);
+                        Console.Write(new string(' ', 200));
+                        Console.SetCursorPosition(17, 14);
+                    }
+                    else
+                        break;
+                }
+            }
+            return moveSplit;
         }
         static void assignMove(string[] moveSplit)
         {
@@ -347,12 +555,15 @@ namespace TicTacToeOOP
             List<int[]>possibleMoves = new List<int[]>();
             int[] coords = new int[] { };
 
-            for(int a = 0; a < _board.GetLength(0); a++)
+            for(int x = 0; x < _board.GetLength(0); x++)
             {
-                for(int b = 0; b < _board.GetLength(1); b++)
+                for(int y = 0; y < _board.GetLength(1); y++)
                 {
-                    coords = new int[] { a, b };
-                    possibleMoves.Add(coords);
+                    if (_board[x, y] == ' ')
+                    {
+                        coords = new int[] { x, y };
+                        possibleMoves.Add(coords);
+                    }
                 }
             }
             
